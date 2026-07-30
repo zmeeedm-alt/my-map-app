@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Моя карта</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100vw; }
+        .popup-card { text-align: center; max-width: 200px; font-family: sans-serif; }
+        .popup-card img { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; }
+        .popup-card h3 { margin: 5px 0; font-size: 14px; }
+        .popup-card p { font-size: 12px; color: #555; margin-bottom: 8px; }
+        .popup-btn {
+            display: inline-block;
+            background: #2481cc;
+            color: #fff !important;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        // Центр карты (Москва)
+        const map = L.map('map').setView([55.751244, 37.618423], 11);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // ВАШИ ТОЧКИ (Координаты, картинка, заголовок и ссылка на пост)
+        const places = [
+            {
+                lat: 55.751244,
+                lng: 37.618423,
+                title: "Красивое место №1",
+                desc: "Описание этого места",
+                image: "https://picsum.photos/200/100?1",
+                postUrl: "https://t.me/telegram" // 👈 Замените на ссылку на ваш пост
+            },
+            {
+                lat: 55.755814,
+                lng: 37.617635,
+                title: "Красивое место №2",
+                desc: "Ещё одно классное место",
+                image: "https://picsum.photos/200/100?2",
+                postUrl: "https://t.me/telegram" // 👈 Замените на ссылку на ваш пост
+            }
+        ];
+
+        places.forEach(place => {
+            const marker = L.marker([place.lat, place.lng]).addTo(map);
+            const content = `
+                <div class="popup-card">
+                    <img src="${place.image}">
+                    <h3>${place.title}</h3>
+                    <p>${place.desc}</p>
+                    <a href="${place.postUrl}" target="_blank" class="popup-btn">Открыть пост</a>
+                </div>
+            `;
+            marker.bindPopup(content);
+        });
+    </script>
+</body>
+</html>
