@@ -28,26 +28,45 @@
             font-size: 12px;
             font-weight: bold;
         }
-        .popup-btn:active { background: #1b639e; }
+
+        /* Кнопка "Где я?" */
+        .locate-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 1000;
+            background: white;
+            border: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .locate-btn:active { background: #f0f0f0; }
     </style>
 </head>
 <body>
     <div id="map"></div>
+    <button class="locate-btn" id="locateBtn" title="Мое местоположение">📍</button>
 
     <script>
-        // Инициализация Telegram
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
 
-        // 1. Центрируем карту на Вьетнам
+        // 1. Создаем карту (начальный центр)
         const map = L.map('map').setView([14.800000, 108.800000], 7);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19
         }).addTo(map);
 
-        // 2. Ваши добавленные локации
+        // 2. Ваши метки
         const places = [
             {
                 lat: 13.788035414850954,
@@ -67,7 +86,6 @@
             }
         ];
 
-        // 3. Отображение меток на карте
         places.forEach(place => {
             const marker = L.marker([place.lat, place.lng]).addTo(map);
             const content = `
@@ -81,24 +99,49 @@
             marker.bindPopup(content);
         });
 
-        // 4. Определение местоположения пользователя (Синяя точка)
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
+        // Переменные для геолокации
+        let userLat = null;
+        let userLng = null;
+        let userMarker = null;
 
-                    L.circleMarker([userLat, userLng], {
-                        color: '#ffffff',
-                        weight: 2,
-                        fillColor: '#2481cc',
-                        fillOpacity: 1,
-                        radius: 8
-                    }).addTo(map).bindPopup("<b>Вы здесь!</b>");
-                },
-                (err) => { console.log("Геолокация недоступна", err); }
-            );
+        // 3. Функция определения геопозиции
+        function findUserLocation(autoCenter = false) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLat = position.coords.latitude;
+                        userLng = position.coords.longitude;
+
+                        // Если маркера ещё нет — создаем его
+                        if (!userMarker) {
+                            userMarker = L.circleMarker([userLat, userLng], {
+                                color: '#ffffff',
+                                weight: 2,
+                                fillColor: '#2481cc',
+                                fillOpacity: 1,
+                                radius: 8
+                            }).addTo(map).bindPopup("<b>Вы здесь!</b>");
+                        } else {
+                            userMarker.setLatLng([userLat, userLng]);
+                        }
+
+                        // Если нажата кнопка или стоит авто-центрирование
+                        if (autoCenter) {
+                            map.flyTo([userLat, userLng], 13);
+                        }
+                    },
+                    (err) => { alert("Не удалось определить местоположение. Проверьте разрешения в телефоне."); }
+                );
+            }
         }
+
+        // Запускаем поиск геопозиции при старте
+        findUserLocation(false);
+
+        // Клик по кнопке "📍" центрирует карту на вас
+        document.getElementById('locateBtn').addEventListener('click', () => {
+            findUserLocation(true);
+        });
     </script>
 </body>
 </html>
