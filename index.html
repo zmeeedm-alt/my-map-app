@@ -1,75 +1,72 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Моя карта</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <style>
-        body { margin: 0; padding: 0; }
-        #map { height: 100vh; width: 100vw; }
-        .popup-card { text-align: center; max-width: 200px; font-family: sans-serif; }
-        .popup-card img { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; }
-        .popup-card h3 { margin: 5px 0; font-size: 14px; }
-        .popup-card p { font-size: 12px; color: #555; margin-bottom: 8px; }
-        .popup-btn {
-            display: inline-block;
-            background: #2481cc;
-            color: #fff !important;
-            text-decoration: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    // 1. Инициализация карты (по умолчанию центр — Москва или Вьетнам)
+    const map = L.map('map').setView([13.7878687, 109.2902648], 11);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+    }).addTo(map);
+
+    // 2. Список ваших интересных мест
+    const places = [
+        {
+            lat: 13.788035414850954,
+            lng: 109.29028625767052,
+            title: "Мыс у Куйнена",
+            desc: "Вид на скалы и океан",
+            image: "https://i.ibb.co/tTtwBmn1/2026-07-30-19-14-09.jpg",
+            postUrl: "https://t.me/away_journal/62"
+        },
+        {
+            lat: 16.003865095351337,
+            lng: 108.2632141441763,
+            title: "Мраморные горы, Дананг",
+            desc: "На окраине города есть система гор. Их пять и они символизируют элементы - вода, земля, огонь, металл, дерево",
+            image: "https://i.ibb.co/hJh47VM0/2026-07-30-19-18-33.jpg",
+            postUrl: "https://t.me/away_journal/89"
         }
-    </style>
-</head>
-<body>
-    <div id="map"></div>
+    ];
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+    // Отрисовываем ваши места
+    places.forEach(place => {
+        const marker = L.marker([place.lat, place.lng]).addTo(map);
+        const content = `
+            <div class="popup-card">
+                <img src="${place.image}">
+                <h3>${place.title}</h3>
+                <p>${place.desc}</p>
+                <a href="${place.postUrl}" target="_blank" class="popup-btn">Открыть пост</a>
+            </div>
+        `;
+        marker.bindPopup(content);
+    });
 
-        // Центр карты (Москва)
-        const map = L.map('map').setView([55.751244, 37.618423], 11);
+    // 3. 📍 ОПРЕДЕЛЕНИЕ ГЕОЛОКАЦИИ ПОЛЬЗОВАТЕЛЯ
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                // Создаем синий кружок в точке пользователя
+                const userLocationMarker = L.circleMarker([userLat, userLng], {
+                    color: '#1a73e8',       // Синяя обводка
+                    fillColor: '#4285f4',   // Синяя заливка
+                    fillOpacity: 0.9,
+                    radius: 8               // Размер кружка
+                }).addTo(map);
 
-        // ВАШИ ТОЧКИ (Координаты, картинка, заголовок и ссылка на пост)
-        const places = [
-            {
-                lat: 13.788035414850954,
-                lng: 109.29028625767052,
-                title: "Мыс у Куйнена",
-                desc: "Локация не самая известная, надо будет идти через кладбище, в комментариях на гугл картах есть описание маршрута, ориентируетесь на него.",
-                image: "https://i.ibb.co/tTtwBmn1/2026-07-30-19-14-09.jpg",
-                postUrl: "https://t.me/away_journal/62" // 👈 Замените на ссылку на ваш пост
+                userLocationMarker.bindPopup("<b>Вы здесь!</b>");
+
+                // Перемещаем карту к пользователю (по желанию)
+                // map.setView([userLat, userLng], 12);
             },
-            {
-                lat: 16.003865095351337,
-                lng: 108.2632141441763,
-                title: "Мраморные горы, Дананг",
-                desc: "На окраине города есть система гор. Их пять и они символизируют элементы - вода, земля, огонь, металл, дерево.",
-                image: "https://i.ibb.co/hJh47VM0/2026-07-30-19-18-33.jpg",
-                postUrl: "https://t.me/away_journal/89" // 👈 Замените на ссылку на ваш пост
+            (error) => {
+                console.log("Пользователь запретил доступ к геопозиции или произошла ошибка:", error);
             }
-        ];
-
-        places.forEach(place => {
-            const marker = L.marker([place.lat, place.lng]).addTo(map);
-            const content = `
-                <div class="popup-card">
-                    <img src="${place.image}">
-                    <h3>${place.title}</h3>
-                    <p>${place.desc}</p>
-                    <a href="${place.postUrl}" target="_blank" class="popup-btn">Открыть пост</a>
-                </div>
-            `;
-            marker.bindPopup(content);
-        });
-    </script>
-</body>
-</html>
+        );
+    }
+</script>
